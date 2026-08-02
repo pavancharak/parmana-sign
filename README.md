@@ -1,5 +1,7 @@
 # @parmana/sign
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13926/badge)](https://www.bestpractices.dev/projects/13926)
+
 Applications that need to sign, verify, or deterministically hash data
 usually end up solving the same three problems from scratch: a
 consistent byte representation for arbitrary objects (so the same
