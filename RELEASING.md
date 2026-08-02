@@ -2,7 +2,9 @@
 
 ## Cutting a release
 
-1. Bump `version` in `package.json` and add an entry to `CHANGELOG.md`.
+1. Bump `version` in `package.json` and add an entry to `CHANGELOG.md`. **This must match the
+   git tag exactly** — the workflow verifies this and refuses to build/publish if they disagree
+   (added after `v0.1.0`/`v0.1.1` were both tagged while `package.json` still said `"0.1.0"`).
 2. Commit, push to `main`.
 3. Tag the release and push the tag:
 
@@ -13,14 +15,25 @@
 
 Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which:
 
-1. Builds and tests the package with a clean `npm ci`.
-2. Packs it into the exact tarball `npm publish` would produce (`npm pack`).
-3. Generates [SLSA](https://slsa.dev) Build Level 3 provenance for that tarball via the
+1. Verifies the tag matches `package.json`'s version, failing closed if not.
+2. Builds and tests the package with a clean `npm ci`.
+3. Packs it into the exact tarball `npm publish` would produce (`npm pack`).
+4. Generates [SLSA](https://slsa.dev) Build Level 3 provenance for that tarball via the
    [SLSA GitHub generator](https://github.com/slsa-framework/slsa-github-generator).
-4. Signs the tarball keylessly with [cosign](https://github.com/sigstore/cosign), using
+5. Signs the tarball keylessly with [cosign](https://github.com/sigstore/cosign), using
    GitHub's own OIDC identity for the workflow run — no signing key to generate or store.
-5. Attaches the tarball, its SLSA provenance (`*.intoto.jsonl`), its cosign signature
+6. Attaches the tarball, its SLSA provenance (`*.intoto.jsonl`), its cosign signature
    (`*.sig`), and its cosign certificate (`*.pem`) to the GitHub release.
+7. Publishes that same tarball to the public npm registry via
+   [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC — no npm token stored
+   as a secret anywhere in this repo) with npm's own provenance attestation
+   (`npm publish --provenance`).
+
+**Before step 7 can succeed for the first time**, a Trusted Publisher must be linked for
+`@parmana/sign` on npmjs.com (repository `pavancharak/parmana-sign`, workflow file
+`release.yml`) — see npm's [Trusted Publishing docs](https://docs.npmjs.com/trusted-publishers/)
+for the current first-publish flow. Until that's linked, the publish step fails with an auth
+error; everything else in the workflow (GitHub release, provenance, signature) still succeeds.
 
 ## Verifying a release
 
@@ -58,6 +71,16 @@ cosign verify-blob <tarball>.tgz \
 A successful verification proves the exact bytes of the tarball were signed by that specific
 GitHub Actions workflow run, and that the signature is recorded in the public Rekor
 transparency log (queryable independently at https://rekor.sigstore.dev).
+
+### Verify npm's own provenance
+
+```bash
+npm audit signatures
+```
+
+or check the "Provenance" panel on the package's npmjs.com page directly. This is separate
+from (and in addition to) the SLSA provenance above — it's npm's own attestation, generated
+because the publish ran via Trusted Publishing from this repository's `release.yml`.
 
 ## Reproducibility
 
