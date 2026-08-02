@@ -1,6 +1,7 @@
 # @parmana/sign
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13926/badge)](https://www.bestpractices.dev/projects/13926)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/pavancharak/parmana-sign/badge)](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign)
 
 Applications that need to sign, verify, or deterministically hash data
 usually end up solving the same three problems from scratch: a
@@ -170,9 +171,16 @@ const valid: boolean = await verifier.verify(artifact: unknown, signature: strin
   non-conforming runtimes throw synchronously on key generation
   instead of failing gracefully.
 
-## Security
+## Security & Supply Chain
 
 See [SECURITY.md](./SECURITY.md) for how to report a vulnerability.
+
+- **OpenSSF Best Practices**: passing badge (see above) — [project #13926](https://www.bestpractices.dev/projects/13926).
+- **OpenSSF Scorecard**: automated supply-chain security score, published weekly and on every push to `main` (see badge above).
+- **SLSA provenance**: every tagged release (`v*.*.*`) is built via a GitHub Actions workflow that generates [SLSA](https://slsa.dev) Build Level 3 provenance for the published npm tarball, independently verifiable with [`slsa-verifier`](https://github.com/slsa-framework/slsa-verifier).
+- **Sigstore signatures**: every release tarball is signed keylessly with [cosign](https://github.com/sigstore/cosign) using GitHub's OIDC identity, with the signature recorded in the public Rekor transparency log.
+
+See [RELEASING.md](./RELEASING.md) for the exact commands to verify a release's provenance and signature yourself.
 
 ## Contributing
 

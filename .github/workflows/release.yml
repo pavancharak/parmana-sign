@@ -1,0 +1,111 @@
+name: Release
+
+# Tagged releases only (v1.2.3-style tags), not every commit -- provenance
+# and signing are for the artifact someone actually installs, not for
+# every push to main (already covered by ci.yml).
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+      tarball-name: ${{ steps.pack.outputs.tarball-name }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+
+      # Deterministic build inputs: npm ci (not npm install) installs
+      # exactly what package-lock.json pins, and this package's build
+      # (tsc) does not embed timestamps or environment-dependent values
+      # anywhere in its output. Byte-for-byte reproducibility of the
+      # final .tgz (normalizing tar entry mtimes, etc.) is not done in
+      # this pass -- noted as a known gap in RELEASING.md rather than
+      # silently claimed.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Pack npm tarball
+        id: pack
+        run: |
+          name="$(npm pack | tail -n1)"
+          echo "tarball-name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Generate hashes for provenance
+        id: hash
+        shell: bash
+        run: echo "hashes=$(sha256sum '${{ steps.pack.outputs.tarball-name }}' | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-package
+          path: ${{ steps.pack.outputs.tarball-name }}
+          if-no-files-found: error
+          retention-days: 5
+
+  # slsa-framework's reusable workflow MUST be referenced by tag, not a
+  # pinned SHA -- unlike every other action in this repo. This is
+  # intentional and documented by the SLSA project itself: their own
+  # verifier checks the ref of this reusable workflow as part of what
+  # it attests to, which is incompatible with SHA-pinning it. See
+  # https://github.com/slsa-framework/slsa-github-generator (rule 1.2's
+  # documented exception).
+  provenance:
+    needs: [build]
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true
+
+  sign-and-release:
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: npm-package
+
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+
+      # Keyless signing via GitHub's OIDC identity -- no long-lived
+      # signing key to generate, store, or rotate. cosign uploads the
+      # signature to the public Rekor transparency log by default.
+      - name: Sign npm package tarball (keyless, GitHub OIDC)
+        run: |
+          cosign sign-blob \
+            --yes \
+            --output-signature "${{ needs.build.outputs.tarball-name }}.sig" \
+            --output-certificate "${{ needs.build.outputs.tarball-name }}.pem" \
+            "${{ needs.build.outputs.tarball-name }}"
+
+      - uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
+        with:
+          files: |
+            ${{ needs.build.outputs.tarball-name }}
+            ${{ needs.build.outputs.tarball-name }}.sig
+            ${{ needs.build.outputs.tarball-name }}.pem

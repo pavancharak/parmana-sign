@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Keeps the SHA-pinned actions in .github/workflows/*.yml current —
+  # Dependabot understands the "@<sha> # vX.Y.Z" comment convention and
+  # opens a PR bumping both when a new release is out.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
