@@ -62,7 +62,19 @@ export class CanonicalSerializer {
     return Object.keys(object)
       .sort()
       .reduce<Record<string, unknown>>((normalized, key) => {
-        normalized[key] = this.normalize(object[key]);
+        // Object.keys() on a JSON.parse()'d object can legitimately
+        // include a literal "__proto__" key. Plain bracket assignment
+        // (normalized[key] = ...) would divert that specific key into
+        // the prototype setter instead of creating a normal own
+        // property, silently dropping it from the canonical output.
+        // Object.defineProperty always creates/updates a real own
+        // data property regardless of the key's name.
+        Object.defineProperty(normalized, key, {
+          value: this.normalize(object[key]),
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        });
 
         return normalized;
       }, {});

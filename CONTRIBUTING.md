@@ -34,6 +34,12 @@ concerns belong in the application layer, not here.
 - Public classes and interfaces should have doc comments explaining
   *what* they do and any non-obvious invariants.
 
+## Requirements for contributions
+
+- All changes must include tests for new functionality.
+- Changes must pass `npm run lint` and `npm run typecheck` before merge.
+- Follow the existing TypeScript style already used in the codebase.
+
 ## Reporting bugs
 
 Open a GitHub issue with steps to reproduce. For security

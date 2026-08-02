@@ -1,17 +1,25 @@
 # @parmana/sign
 
-Standalone signing, verification, and canonical-hashing primitives for
-TypeScript/Node, including a post-quantum ML-DSA-65 (Dilithium3)
-signature provider built on Node's native `node:crypto` support
-(Node >=24, OpenSSL >=3.5).
+Applications that need to sign, verify, or deterministically hash data
+usually end up solving the same three problems from scratch: a
+consistent byte representation for arbitrary objects (so the same
+logical value always hashes/signs the same way), a swappable signature
+algorithm behind one interface, and support for post-quantum signatures
+as classical algorithms start getting deprecated in security-sensitive
+contexts. `@parmana/sign` is those three pieces as a small, standalone
+library: canonical object serialization, a `SignatureProvider`
+interface with a working ML-DSA-65 (Dilithium3) post-quantum
+implementation built on Node's native `node:crypto` support (Node >=24,
+OpenSSL >=3.5), and hash/verify helpers built on top.
 
-This is a general-purpose cryptographic primitives library. **It is not
-an authorization or policy-evaluation system.** It signs, verifies, and
-canonically hashes artifacts you give it — it makes no decisions about
-whether an action should be allowed. It was extracted from
-[Parmana](https://parmana.ai), an AI execution-authorization platform,
-as the subset of that project's crypto layer that is generic enough to
-stand on its own.
+**It is fully usable on its own, independent of Parmana** — it has no
+dependency on Parmana's runtime, policy engine, or any other Parmana
+package. It is also **not an authorization or policy-evaluation
+system**: it signs, verifies, and canonically hashes artifacts you give
+it, and makes no decisions about whether an action should be allowed.
+It was extracted from [Parmana](https://parmanasystems.com), an AI
+execution-authorization platform, as the subset of that project's crypto
+layer that is generic enough to stand on its own.
 
 ## What this is
 
@@ -77,6 +85,75 @@ const crypto: CryptoProvider = {
 
 const hasher = new ArtifactHasher(crypto);
 const digest = await hasher.hash({ amount: 100, currency: "USD" });
+```
+
+## API
+
+### `SignatureProvider` (interface)
+
+Minimal sign/verify contract every signature implementation follows.
+Key management is intentionally external — implementations take a
+`node:crypto` `KeyObject`, never a file path, env var, or credential
+store.
+
+```ts
+interface SignatureProvider {
+  readonly algorithm: SignatureAlgorithm;
+  sign(data: Uint8Array, privateKey: KeyObject): Promise<string>;
+  verify(data: Uint8Array, signature: string, publicKey: KeyObject): Promise<boolean>;
+}
+```
+
+### `Dilithium3SignatureProvider`
+
+`SignatureProvider` implementation for ML-DSA-65 (Dilithium3), a
+NIST-standardized post-quantum signature scheme. Stateless; safe to
+share a single instance. Signatures are base64-encoded strings.
+ML-DSA-65 is randomized — signing the same data twice with the same key
+produces two different, both-valid signatures.
+
+```ts
+const provider = new Dilithium3SignatureProvider();
+const signature: string = await provider.sign(data: Uint8Array, privateKey: KeyObject);
+const valid: boolean = await provider.verify(data: Uint8Array, signature: string, publicKey: KeyObject);
+```
+
+Throws `CryptoError` if the supplied key's `asymmetricKeyType` isn't
+`"ml-dsa-65"` — this catches accidentally signing with the wrong
+algorithm's key material.
+
+### `CanonicalSerializer`
+
+Produces a deterministic byte representation of an arbitrary object:
+object keys are sorted recursively, arrays keep their order, `Date`
+becomes an ISO string. Two calls with structurally-equal-but
+differently-ordered objects produce identical output.
+
+```ts
+const bytes: Uint8Array = new CanonicalSerializer().serialize(value: unknown);
+```
+
+### `ArtifactHasher`
+
+Canonically serializes a value, then hashes it with a supplied
+`CryptoProvider`'s hash implementation.
+
+```ts
+const hasher = new ArtifactHasher(crypto: CryptoProvider);
+const digest: string = await hasher.hash(value: unknown);
+```
+
+### `SignatureVerifier`
+
+Canonically serializes a value, then verifies a signature over it with
+a supplied `CryptoProvider`'s signature implementation. This is the
+counterpart consumers typically use instead of calling a
+`SignatureProvider` directly, since it guarantees the same
+serialization was used on both the signing and verifying side.
+
+```ts
+const verifier = new SignatureVerifier(crypto: CryptoProvider);
+const valid: boolean = await verifier.verify(artifact: unknown, signature: string, publicKey: KeyObject);
 ```
 
 ## Requirements
