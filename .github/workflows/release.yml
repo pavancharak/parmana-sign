@@ -26,6 +26,21 @@ jobs:
         with:
           node-version: 24
 
+      # Guards against publishing the wrong version: v0.1.0 and v0.1.1
+      # were both tagged with package.json still at "0.1.0" (found while
+      # wiring up npm publish -- the tag name and the published version
+      # had silently diverged). Publishing a mismatched version to a
+      # public registry is effectively unrecoverable, so this fails
+      # closed rather than trusting the tag and the file to agree.
+      - name: Verify package.json version matches the pushed tag
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          pkg_version="$(node -p "require('./package.json').version")"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (version $tag_version) does not match package.json's version ($pkg_version). Bump package.json before tagging -- refusing to build/publish a mismatched release."
+            exit 1
+          fi
+
       # Deterministic build inputs: npm ci (not npm install) installs
       # exactly what package-lock.json pins, and this package's build
       # (tsc) does not embed timestamps or environment-dependent values
@@ -90,6 +105,18 @@ jobs:
         with:
           name: npm-package
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted Publishing (OIDC) requires npm CLI >=11.5.1. The npm
+      # bundled with a given Node release can lag behind that, so this
+      # upgrades explicitly rather than assuming setup-node's default is
+      # new enough.
+      - name: Ensure npm is new enough for Trusted Publishing
+        run: npm install -g npm@latest
+
       - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
 
       # Keyless signing via GitHub's OIDC identity -- no long-lived
@@ -109,3 +136,15 @@ jobs:
             ${{ needs.build.outputs.tarball-name }}
             ${{ needs.build.outputs.tarball-name }}.sig
             ${{ needs.build.outputs.tarball-name }}.pem
+
+      # Publishes the exact tarball that was just SLSA-attested and
+      # cosign-signed above -- not a fresh build. Trusted Publishing
+      # (OIDC, via the id-token: write permission on this job) means no
+      # NODE_AUTH_TOKEN/npm token secret is configured or needed here;
+      # npm exchanges this job's GitHub identity for a short-lived
+      # credential directly with the registry. Requires a Trusted
+      # Publisher to already be linked for this package on npmjs.com
+      # (see RELEASING.md) -- until that's done, this step will fail
+      # with an auth error, not silently fall back to anything.
+      - name: Publish to npm (Trusted Publishing, with provenance)
+        run: npm publish "${{ needs.build.outputs.tarball-name }}" --provenance --access public
