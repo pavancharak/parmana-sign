@@ -1,7 +1,7 @@
 # @parmana/sign
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13926/badge)](https://www.bestpractices.dev/projects/13926)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/pavancharak/parmana-sign/badge)](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/pavancharak/parmana-sign/badge)](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign) ([full report](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign))
 
 Applications that need to sign, verify, or deterministically hash data
 usually end up solving the same three problems from scratch: a

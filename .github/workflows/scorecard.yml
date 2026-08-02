@@ -4,6 +4,10 @@ on:
   branch_protection_rule:
   schedule:
     - cron: "30 1 * * 6"
+  # ossf/scorecard-action requires the repository's actual default
+  # branch (`main` — see `default_branch` in the repo settings/API).
+  # Pushing to any other branch fails the action immediately with
+  # "Only the default branch <name> is supported."
   push:
     branches:
       - main
