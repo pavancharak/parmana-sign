@@ -158,10 +158,15 @@ const valid: boolean = await verifier.verify(artifact: unknown, signature: strin
 
 ## Requirements
 
-- Node.js >= 24 with OpenSSL >= 3.5 for ML-DSA-65 support. Use
-  `isMlDsa65Supported()` to check at runtime before relying on the
-  Dilithium3 provider; older runtimes throw synchronously on key
-  generation instead of failing gracefully.
+- Requires Node.js >=24.6.0 (needs OpenSSL 3.5+ for ML-DSA-65 support
+  via `node:crypto`). Node.js only added `node:crypto` support for
+  ML-DSA KeyObjects, signing, and verification in v24.6.0
+  ([nodejs/node#59259](https://github.com/nodejs/node/pull/59259)) —
+  earlier 24.x releases do not have it even though they satisfy a
+  plain `>=24` check. Use `isMlDsa65Supported()` to check at runtime
+  before relying on the Dilithium3 provider regardless; older or
+  non-conforming runtimes throw synchronously on key generation
+  instead of failing gracefully.
 
 ## Security
 
