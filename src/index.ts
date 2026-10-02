@@ -21,6 +21,7 @@ export * from "./CanonicalSerializer.js";
 // -----------------------------------------------------------------------------
 
 export * from "./ArtifactHasher.js";
+export * from "./providers/hash/Sha256HashProvider.js";
 
 // -----------------------------------------------------------------------------
 // Signatures
@@ -36,6 +37,14 @@ export * from "./providers/CryptoProvider.js";
 export * from "./providers/HashProvider.js";
 export * from "./providers/SignatureProvider.js";
 export * from "./providers/signature/Dilithium3SignatureProvider.js";
+export * from "./providers/signature/Ed25519SignatureProvider.js";
+export * from "./SignatureCommitment.js";
+
+// -----------------------------------------------------------------------------
+// Parmana artifact verification (offline)
+// -----------------------------------------------------------------------------
+
+export * from "./parmana/index.js";
 
 // -----------------------------------------------------------------------------
 // Errors

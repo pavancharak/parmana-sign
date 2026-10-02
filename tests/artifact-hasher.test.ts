@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ArtifactHasher } from "../src/ArtifactHasher.js";
 import { Dilithium3SignatureProvider } from "../src/providers/signature/Dilithium3SignatureProvider.js";
 import type { CryptoProvider } from "../src/providers/CryptoProvider.js";
-import { Sha256HashProvider } from "./helpers/Sha256HashProvider.js";
+import { Sha256HashProvider } from "../src/providers/hash/Sha256HashProvider.js";
 
 // ArtifactHasher never calls into the signature provider, but
 // CryptoProvider requires one structurally. Dilithium3SignatureProvider

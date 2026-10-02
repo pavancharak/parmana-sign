@@ -1,7 +1,7 @@
 {
   "name": "@parmana/sign",
-  "version": "0.1.0",
-  "description": "Standalone signing, verification, and canonical-hashing primitives, including an ML-DSA-65 (Dilithium3) post-quantum signature provider, extracted from Parmana.",
+  "version": "0.2.0",
+  "description": "Standalone signing, verification, and canonical-hashing primitives, including Ed25519 and ML-DSA-65 (Dilithium3) post-quantum signature providers and offline verification of Parmana artifacts.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,6 +32,7 @@
     "post-quantum",
     "ml-dsa",
     "dilithium",
+    "ed25519",
     "signatures",
     "verification"
   ],

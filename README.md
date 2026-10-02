@@ -30,6 +30,11 @@ layer that is generic enough to stand on its own.
   `node:crypto` `KeyObject`.
 - `Dilithium3SignatureProvider` — an implementation of that interface
   for ML-DSA-65 (Dilithium3), a post-quantum signature scheme.
+- `Ed25519SignatureProvider` — an implementation for Ed25519, the
+  classical default Parmana signs with.
+- `verifyExecutionTrustRecordOffline` / `verifyExecutionIntentOffline`
+  — check a signed Parmana artifact using only the artifact and a
+  public key: no network, no database, no trust in Parmana's servers.
 - `SignatureVerifier` / `ArtifactHasher` — small helpers that
   canonically serialize an arbitrary object (deterministic key
   ordering) before signing, verifying, or hashing it, so the same
@@ -90,6 +95,48 @@ const hasher = new ArtifactHasher(crypto);
 const digest = await hasher.hash({ amount: 100, currency: "USD" });
 ```
 
+## Verifying Parmana artifacts offline
+
+Given a signed Execution Trust Record or Execution Intent (for example
+exported from Parmana as JSON) and the public keys it references, you
+can check it yourself:
+
+```ts
+import { verifyExecutionTrustRecordOffline } from "@parmana/sign";
+
+const result = await verifyExecutionTrustRecordOffline(record, {
+  "ed-key-1": ed25519PublicKeyPem,  // keyId -> PEM (SPKI) or KeyObject
+  "pq-key-1": mlDsa65PublicKeyPem,  // only needed for hybrid records
+});
+
+if (!result.valid) {
+  console.error(result.errors);
+}
+```
+
+A record is `valid` only when all of these hold:
+
+- `trustRecordHash` matches a fresh SHA-256 of the record's canonical
+  content (`hashValid`);
+- the `signature` field verifies (`legacySignatureValid`);
+- if the record carries a hybrid `signatures` array, it has at least
+  two entries with distinct algorithms and every one verifies
+  (`hybridSignaturesValid`; `undefined` when the record has none).
+
+Supported algorithms are `ed25519` and `dilithium3` (ML-DSA-65). Any
+other algorithm, a missing key, or a malformed record is reported in
+`errors` and makes the result invalid; the verifier never throws on bad
+input and never silently skips a check. Whether hybrid signatures are
+*required* is your policy decision: check `hybridSignaturesValid`.
+
+`verifyExecutionIntentOffline(intent, publicKeys)` works the same way
+for Execution Intents. A valid intent proves who authorized the action
+and that it was not altered; it does not prove the action ran.
+
+Compatibility with Parmana's signer is tested against artifacts signed
+by Parmana's own code (`tests/fixtures/parmana-artifacts.json`,
+regenerated with `scripts/generate-parmana-fixtures.sh`).
+
 ## API
 
 ### `SignatureProvider` (interface)
@@ -124,6 +171,22 @@ const valid: boolean = await provider.verify(data: Uint8Array, signature: string
 Throws `CryptoError` if the supplied key's `asymmetricKeyType` isn't
 `"ml-dsa-65"` — this catches accidentally signing with the wrong
 algorithm's key material.
+
+### `Ed25519SignatureProvider`
+
+`SignatureProvider` implementation for Ed25519. Same interface and
+`CryptoError` key-type check as `Dilithium3SignatureProvider`.
+
+For messages over 4096 bytes, `verify()` also accepts Parmana's
+large-message commitment form (a domain-separation prefix plus the
+SHA-512 digest of the message, which is how Parmana's AWS KMS signer
+signs large records). A commitment signature over a message at or under
+4096 bytes is always rejected. `sign()` always signs the raw message.
+
+### `Sha256HashProvider`
+
+`HashProvider` returning the lowercase hex SHA-256 digest, the hash
+format Parmana records use.
 
 ### `CanonicalSerializer`
 
@@ -169,7 +232,8 @@ const valid: boolean = await verifier.verify(artifact: unknown, signature: strin
   plain `>=24` check. Use `isMlDsa65Supported()` to check at runtime
   before relying on the Dilithium3 provider regardless; older or
   non-conforming runtimes throw synchronously on key generation
-  instead of failing gracefully.
+  instead of failing gracefully. Ed25519 and the offline verifiers'
+  Ed25519 checks work on older Node versions too.
 
 ## Security & Supply Chain
 
