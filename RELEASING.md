@@ -22,8 +22,9 @@ Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which:
    [SLSA GitHub generator](https://github.com/slsa-framework/slsa-github-generator).
 5. Signs the tarball keylessly with [cosign](https://github.com/sigstore/cosign), using
    GitHub's own OIDC identity for the workflow run — no signing key to generate or store.
-6. Attaches the tarball, its SLSA provenance (`*.intoto.jsonl`), its cosign signature
-   (`*.sig`), and its cosign certificate (`*.pem`) to the GitHub release.
+6. Attaches the tarball, its SLSA provenance (`*.intoto.jsonl`), and its cosign Sigstore
+   bundle (`*.sigstore.json`: signature, signing certificate and Rekor inclusion proof in one
+   file) to the GitHub release.
 7. Publishes that same tarball to the public npm registry via
    [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC — no npm token stored
    as a secret anywhere in this repo) with npm's own provenance attestation
@@ -62,8 +63,7 @@ substituted by anyone with just push access to the repo.
 ```bash
 # Install: https://docs.sigstore.dev/system_config/installation/
 cosign verify-blob <tarball>.tgz \
-  --signature <tarball>.tgz.sig \
-  --certificate <tarball>.tgz.pem \
+  --bundle <tarball>.tgz.sigstore.json \
   --certificate-identity-regexp "^https://github.com/pavancharak/parmana-sign/.github/workflows/release.yml@refs/tags/v.*$" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
