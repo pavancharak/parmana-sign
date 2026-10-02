@@ -10,7 +10,7 @@ import {
   isMlDsa65Supported,
   ML_DSA_65_SKIP_REASON,
 } from "../src/support/MlDsaSupport.js";
-import { Sha256HashProvider } from "./helpers/Sha256HashProvider.js";
+import { Sha256HashProvider } from "../src/providers/hash/Sha256HashProvider.js";
 
 function generateKeyPair() {
   return generateKeyPairSync("ml-dsa-65");
