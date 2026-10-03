@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.0 (unreleased)
+## v0.2.0 (2026-10-03)
 
 Offline verification of real Parmana artifacts.
 
@@ -15,6 +15,12 @@ Offline verification of real Parmana artifacts.
   `hybridCanonicalExecutionTrustRecord`, `canonicalExecutionIntent`)
   defining exactly which fields Parmana signs
 - Compatibility tests against artifacts signed by Parmana's own code
+- Release assets: the cosign signature now ships as a single Sigstore
+  bundle (`*.sigstore.json`) instead of separate `.sig`/`.pem` files;
+  verify with `cosign verify-blob --bundle` (see RELEASING.md)
+- Published to npm from the signed release tarball, without npm
+  provenance; the GitHub release carries SLSA provenance and the
+  cosign bundle
 
 ## v0.1.0 (2026-08-02)
 
