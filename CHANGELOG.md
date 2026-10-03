@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- `package.json` now has `repository`, `homepage`, `bugs` and `author`,
+  so the npm page links back to GitHub. Adds `sideEffects: false`, a
+  `./package.json` export, and ships `CHANGELOG.md` in the package.
+- Runnable examples in `examples/` (`npm run examples`).
+- CI also runs the examples, installs and imports the packed tarball
+  (`npm run check:package`), and tests Node 24.6.0, Node 26, Windows and
+  macOS.
+- `.editorconfig` and `.gitattributes` (LF line endings on every
+  platform).
+- README: badges, contents, examples, versioning and support policy.
+  CONTRIBUTING: project layout, fixture regeneration, changelog rule.
+
 ## v0.2.0 (2026-10-03)
 
 Offline verification of real Parmana artifacts.

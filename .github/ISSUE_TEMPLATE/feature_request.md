@@ -24,6 +24,6 @@ considered.
 ---
 
 Note: this library is intentionally small (signing, verification,
-and canonical hashing primitives) — see CONTRIBUTING.md's Scope
+and canonical hashing primitives). See CONTRIBUTING.md's Scope
 section. Proposals that add policy evaluation, authorization logic,
 or key management/storage are likely out of scope.
