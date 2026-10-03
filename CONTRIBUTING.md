@@ -49,7 +49,7 @@ changes, regenerate the fixture from a checkout of the Parmana monorepo
 and let the compatibility tests show what drifted:
 
 ```bash
-PARMANA_REPO=/path/to/AgentLabsBuildathon scripts/generate-parmana-fixtures.sh
+PARMANA_REPO=/path/to/parmana scripts/generate-parmana-fixtures.sh
 npm test
 ```
 

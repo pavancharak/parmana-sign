@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Regenerates tests/fixtures/parmana-artifacts.json from a local checkout
-# of the Parmana monorepo (github.com/pavancharak/AgentLabsBuildathon).
+# of the Parmana monorepo (github.com/pavancharak/parmana).
 #
-#   PARMANA_REPO=/path/to/AgentLabsBuildathon scripts/generate-parmana-fixtures.sh
+#   PARMANA_REPO=/path/to/parmana scripts/generate-parmana-fixtures.sh
 set -euo pipefail
 
 : "${PARMANA_REPO:?set PARMANA_REPO to a checkout of the Parmana monorepo}"
