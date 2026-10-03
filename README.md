@@ -1,5 +1,9 @@
 # @parmana/sign
 
+[![npm](https://img.shields.io/npm/v/@parmana/sign)](https://www.npmjs.com/package/@parmana/sign)
+[![CI](https://github.com/pavancharak/parmana-sign/actions/workflows/ci.yml/badge.svg)](https://github.com/pavancharak/parmana-sign/actions/workflows/ci.yml)
+[![License](https://img.shields.io/npm/l/@parmana/sign)](./LICENSE)
+[![Node](https://img.shields.io/node/v/@parmana/sign)](#requirements)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13926/badge)](https://www.bestpractices.dev/projects/13926)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/pavancharak/parmana-sign/badge)](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign) ([full report](https://scorecard.dev/viewer/?uri=github.com/pavancharak/parmana-sign))
 
@@ -15,7 +19,7 @@ interface with a working ML-DSA-65 (Dilithium3) post-quantum
 implementation built on Node's native `node:crypto` support (Node >=24,
 OpenSSL >=3.5), and hash/verify helpers built on top.
 
-**It is fully usable on its own, independent of Parmana** — it has no
+**It is fully usable on its own, independent of Parmana.** It has no
 dependency on Parmana's runtime, policy engine, or any other Parmana
 package. It is also **not an authorization or policy-evaluation
 system**: it signs, verifies, and canonically hashes artifacts you give
@@ -24,23 +28,37 @@ It was extracted from [Parmana](https://parmanasystems.com), an AI
 execution-authorization platform, as the subset of that project's crypto
 layer that is generic enough to stand on its own.
 
+## Contents
+
+- [What this is](#what-this-is)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Verifying Parmana artifacts offline](#verifying-parmana-artifacts-offline)
+- [Examples](#examples)
+- [API](#api)
+- [Requirements](#requirements)
+- [Versioning and support](#versioning-and-support)
+- [Getting help](#getting-help)
+- [Security and supply chain](#security-and-supply-chain)
+- [Contributing](#contributing)
+
 ## What this is
 
-- `SignatureProvider` — a minimal interface for sign/verify over a
+- `SignatureProvider`: a minimal interface for sign/verify over a
   `node:crypto` `KeyObject`.
-- `Dilithium3SignatureProvider` — an implementation of that interface
+- `Dilithium3SignatureProvider`: an implementation of that interface
   for ML-DSA-65 (Dilithium3), a post-quantum signature scheme.
-- `Ed25519SignatureProvider` — an implementation for Ed25519, the
+- `Ed25519SignatureProvider`: an implementation for Ed25519, the
   classical default Parmana signs with.
-- `verifyExecutionTrustRecordOffline` / `verifyExecutionIntentOffline`
-  — check a signed Parmana artifact using only the artifact and a
+- `verifyExecutionTrustRecordOffline` / `verifyExecutionIntentOffline`:
+  check a signed Parmana artifact using only the artifact and a
   public key: no network, no database, no trust in Parmana's servers.
-- `SignatureVerifier` / `ArtifactHasher` — small helpers that
+- `SignatureVerifier` / `ArtifactHasher`: small helpers that
   canonically serialize an arbitrary object (deterministic key
   ordering) before signing, verifying, or hashing it, so the same
   logical object always produces the same bytes regardless of how it
   was constructed.
-- `CanonicalSerializer` — the deterministic serialization used by the
+- `CanonicalSerializer`: the deterministic serialization used by the
   above.
 
 ## What this is not
@@ -49,7 +67,7 @@ layer that is generic enough to stand on its own.
   never reads keys from disk, environment variables, or a network
   service.
 - Not a policy engine, authorization system, or credential broker.
-  Nothing here decides whether an action is permitted — it only signs
+  Nothing here decides whether an action is permitted. It only signs
   and verifies data you already decided to sign.
 
 ## Installation
@@ -80,15 +98,15 @@ raw bytes:
 
 ```ts
 import {
-  Dilithium3SignatureProvider,
-  SignatureVerifier,
   ArtifactHasher,
+  Dilithium3SignatureProvider,
+  Sha256HashProvider,
   type CryptoProvider,
 } from "@parmana/sign";
 
 const crypto: CryptoProvider = {
   signature: new Dilithium3SignatureProvider(),
-  hash: myHashProvider, // implement HashProvider, or bring your own
+  hash: new Sha256HashProvider(), // or your own HashProvider
 };
 
 const hasher = new ArtifactHasher(crypto);
@@ -140,12 +158,29 @@ Compatibility with Parmana's signer is tested against artifacts signed
 by Parmana's own code (`tests/fixtures/parmana-artifacts.json`,
 regenerated with `scripts/generate-parmana-fixtures.sh`).
 
+## Examples
+
+Runnable examples are in [`examples/`](./examples). They import the
+package by name, the same way your code would:
+
+- [`sign-and-verify.mjs`](./examples/sign-and-verify.mjs): sign an object
+  with Ed25519 and ML-DSA-65, then verify it and a modified copy.
+- [`verify-parmana-record.mjs`](./examples/verify-parmana-record.mjs):
+  verify a Parmana-signed Execution Trust Record offline, then change one
+  field and verify again.
+
+```bash
+npm install
+npm run build
+npm run examples
+```
+
 ## API
 
 ### `SignatureProvider` (interface)
 
 Minimal sign/verify contract every signature implementation follows.
-Key management is intentionally external — implementations take a
+Key management is intentionally external: implementations take a
 `node:crypto` `KeyObject`, never a file path, env var, or credential
 store.
 
@@ -162,7 +197,7 @@ interface SignatureProvider {
 `SignatureProvider` implementation for ML-DSA-65 (Dilithium3), a
 NIST-standardized post-quantum signature scheme. Stateless; safe to
 share a single instance. Signatures are base64-encoded strings.
-ML-DSA-65 is randomized — signing the same data twice with the same key
+ML-DSA-65 is randomized: signing the same data twice with the same key
 produces two different, both-valid signatures.
 
 ```ts
@@ -172,7 +207,7 @@ const valid: boolean = await provider.verify(data: Uint8Array, signature: string
 ```
 
 Throws `CryptoError` if the supplied key's `asymmetricKeyType` isn't
-`"ml-dsa-65"` — this catches accidentally signing with the wrong
+`"ml-dsa-65"`. This catches accidentally signing with the wrong
 algorithm's key material.
 
 ### `Ed25519SignatureProvider`
@@ -230,7 +265,7 @@ const valid: boolean = await verifier.verify(artifact: unknown, signature: strin
 - Requires Node.js >=24.6.0 (needs OpenSSL 3.5+ for ML-DSA-65 support
   via `node:crypto`). Node.js only added `node:crypto` support for
   ML-DSA KeyObjects, signing, and verification in v24.6.0
-  ([nodejs/node#59259](https://github.com/nodejs/node/pull/59259)) —
+  ([nodejs/node#59259](https://github.com/nodejs/node/pull/59259));
   earlier 24.x releases do not have it even though they satisfy a
   plain `>=24` check. Use `isMlDsa65Supported()` to check at runtime
   before relying on the Dilithium3 provider regardless; older or
@@ -238,11 +273,32 @@ const valid: boolean = await verifier.verify(artifact: unknown, signature: strin
   instead of failing gracefully. Ed25519 and the offline verifiers'
   Ed25519 checks work on older Node versions too.
 
-## Security & Supply Chain
+## Versioning and support
+
+- This package follows [Semantic Versioning](https://semver.org). While
+  the version is below 1.0.0, a minor release (0.x.0) may include
+  breaking changes; they are always listed in
+  [CHANGELOG.md](./CHANGELOG.md). Patch releases (0.x.y) never break the
+  public API.
+- The public API is what `src/index.ts` exports. Anything else may change
+  in any release.
+- Supported Node.js versions: 24.6.0 and later. CI tests 24.6.0, the
+  latest 24.x and the latest release line on Linux, and the latest 24.x
+  on Windows and macOS.
+- Security fixes are made on the latest release only.
+
+## Getting help
+
+- Bugs and feature requests: open an
+  [issue](https://github.com/pavancharak/parmana-sign/issues).
+- Security vulnerabilities: do not open a public issue. Follow
+  [SECURITY.md](./SECURITY.md).
+
+## Security and supply chain
 
 See [SECURITY.md](./SECURITY.md) for how to report a vulnerability.
 
-- **OpenSSF Best Practices**: passing badge (see above) — [project #13926](https://www.bestpractices.dev/projects/13926).
+- **OpenSSF Best Practices**: passing badge (see above), [project #13926](https://www.bestpractices.dev/projects/13926).
 - **OpenSSF Scorecard**: automated supply-chain security score, published weekly and on every push to `main` (see badge above).
 - **SLSA provenance**: every tagged release (`v*.*.*`) is built via a GitHub Actions workflow that generates [SLSA](https://slsa.dev) Build Level 3 provenance for the published npm tarball, independently verifiable with [`slsa-verifier`](https://github.com/slsa-framework/slsa-verifier).
 - **Sigstore signatures**: every release tarball is signed keylessly with [cosign](https://github.com/sigstore/cosign) using GitHub's OIDC identity, with the signature recorded in the public Rekor transparency log.
@@ -255,4 +311,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0 — see [LICENSE](./LICENSE).
+Apache License 2.0. See [LICENSE](./LICENSE).

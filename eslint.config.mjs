@@ -13,6 +13,22 @@ export default [
 
   security.configs.recommended,
 
+  // Plain Node.js scripts (examples/, scripts/): declare the Node
+  // built-ins they use. TypeScript files get these from @types/node.
+  {
+    files: ["**/*.mjs"],
+
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        structuredClone: "readonly",
+        TextDecoder: "readonly",
+        URL: "readonly",
+      },
+    },
+  },
+
   {
     files: ["**/*.ts"],
 

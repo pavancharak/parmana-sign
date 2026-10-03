@@ -2,19 +2,31 @@
   "name": "@parmana/sign",
   "version": "0.2.0",
   "description": "Standalone signing, verification, and canonical-hashing primitives, including Ed25519 and ML-DSA-65 (Dilithium3) post-quantum signature providers and offline verification of Parmana artifacts.",
+  "author": "Parmana Systems (https://parmanasystems.com)",
+  "homepage": "https://github.com/pavancharak/parmana-sign#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavancharak/parmana-sign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pavancharak/parmana-sign/issues"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "publishConfig": {
     "access": "public"
@@ -25,7 +37,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "examples": "node examples/run-all.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "cryptography",

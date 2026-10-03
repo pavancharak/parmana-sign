@@ -1,0 +1,7 @@
+# Normalize line endings: LF in the repository and in working trees, so
+# Windows checkouts produce the same bytes (and the same hashes) as CI.
+* text=auto eol=lf
+
+*.mp4 binary
+*.png binary
+*.tgz binary
