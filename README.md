@@ -97,6 +97,9 @@ const digest = await hasher.hash({ amount: 100, currency: "USD" });
 
 ## Verifying Parmana artifacts offline
 
+A 50-second demo of this in action (verify a record, change one field, watch
+verification fail) is in [`docs/demo/`](./docs/demo/).
+
 Given a signed Execution Trust Record or Execution Intent (for example
 exported from Parmana as JSON) and the public keys it references, you
 can check it yourself:
