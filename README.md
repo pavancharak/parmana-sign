@@ -31,6 +31,7 @@ layer that is generic enough to stand on its own.
 ## Contents
 
 - [What this is](#what-this-is)
+- [Where authorization is enforced](#where-authorization-is-enforced)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Verifying Parmana artifacts offline](#verifying-parmana-artifacts-offline)
@@ -69,6 +70,35 @@ layer that is generic enough to stand on its own.
 - Not a policy engine, authorization system, or credential broker.
   Nothing here decides whether an action is permitted. It only signs
   and verifies data you already decided to sign.
+- Not evidence that an unauthorized action was prevented. A valid
+  signature shows who signed a record and that it was not altered. It
+  says nothing about actions that never went through Parmana.
+
+## Where authorization is enforced
+
+If you are evaluating Parmana's security rather than this library, the
+system to evaluate is the Parmana server in
+[github.com/pavancharak/parmana](https://github.com/pavancharak/parmana),
+not this package. Execution is refused there, before anything runs, at:
+
+1. **The API boundary** (`packages/api/src/middleware/caller-auth.ts`):
+   unauthenticated callers and capabilities the API key is not allowed.
+2. **The decision** (`packages/runtime/src/RuntimeEngine.ts`): policy
+   rules, and a signed human approval for this action, resource and
+   amount. A refused request gets no authorization.
+3. **The gateway** (`packages/execution-gateway/src/ExecutionGateway.ts`):
+   the authorization's signature, expiry, content hash, policy version,
+   signals and single use nonce, checked before the connector is called.
+4. **Execution control** (`packages/execution-control/`): connectors
+   accept only a valid gateway session, and only there are connector
+   credentials released.
+
+Parmana enforces nothing at the network level: anyone holding a
+downstream system's own credentials can call it directly. The
+[Audit guide](https://docs.parmanasystems.com/evaluation/audit-guide)
+covers what an attacker controls in each case, including a compromised
+approver key or authorization signing key, and a bounded scenario
+pinned to a commit.
 
 ## Installation
 
@@ -152,7 +182,10 @@ input and never silently skips a check. Whether hybrid signatures are
 
 `verifyExecutionIntentOffline(intent, publicKeys)` works the same way
 for Execution Intents. A valid intent proves who authorized the action
-and that it was not altered; it does not prove the action ran.
+and that it was not altered; it does not prove the action ran. Neither
+check shows that an action was authorized correctly, or that an
+unauthorized one was blocked: see
+[Where authorization is enforced](#where-authorization-is-enforced).
 
 Compatibility with Parmana's signer is tested against artifacts signed
 by Parmana's own code (`tests/fixtures/parmana-artifacts.json`,
