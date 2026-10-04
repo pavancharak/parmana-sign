@@ -344,4 +344,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](./LICENSE).
+Apache License 2.0. See [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
+
+Copyright 2026 Parmana Systems Private Limited. "Parmana" is a trademark of Parmana Systems
+Private Limited; the license does not grant permission to use it.
